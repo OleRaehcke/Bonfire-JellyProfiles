@@ -4105,12 +4105,16 @@
                     }
                 }
 
+                // Fork: no "Your Bonfire" header over your own profiles. Linked Bonfires keep
+                // theirs, so they can still be told apart.
                 sectionsHtml += `
                     <div class="profiles-home-section">
+                        ${isLocalGroup ? '' : `
                         <div class="profiles-home-header">
                             <span class="material-icons profiles-home-icon ${isBonfireIcon ? 'bonfire-icon-color' : ''}">${headerIcon}</span>
                             <span class="profiles-home-title">${headerTitle}</span>
                         </div>
+                        `}
                         <div class="profiles-grid">
                             ${cardsHtml}
                         </div>
