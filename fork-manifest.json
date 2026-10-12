@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/OleRaehcke/Bonfire-JellyProfiles/main/images/icon.jpg",
     "versions": [
       {
+        "version": "1.6.4.2",
+        "changelog": "Kein \"Your Bonfire\"-Titel mehr über den eigenen Profilen. Profilbild oben rechts im Header wird nicht mehr vergrößert/gezoomt angezeigt.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/OleRaehcke/Bonfire-JellyProfiles/releases/download/fork-v1.6.4.2/Jellyfin.Profiles.zip",
+        "checksum": "8154fa00790649186e251c61e43edc8e",
+        "timestamp": "2026-10-12T07:11:03Z"
+      },
+      {
         "version": "1.6.4.1",
         "changelog": "Erster eigener Build des Forks. Inhaltlich identisch mit Upstream 1.6.4.",
         "targetAbi": "10.11.0.0",
