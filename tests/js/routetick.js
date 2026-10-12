@@ -211,6 +211,11 @@ p._libraryArtLoaded = true;
 // First tick primes whatever caching exists; the measurement is of the ones after it,
 // which is what 119 of every 120 ticks in a minute actually are.
 p.checkRoute();
+// Fork: with the startup gate off the button is shown even without a profile session,
+// so this fixture now goes through the header search too. Retire its startup grace and
+// warm up again, exactly as the "profile active" section below does.
+p._headerAnchorWaitFrom = 0;
+p.checkRoute();
 env.reset();
 
 const TICKS = 100;
