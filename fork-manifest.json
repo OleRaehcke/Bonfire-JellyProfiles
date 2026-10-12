@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/OleRaehcke/Bonfire-JellyProfiles/main/images/icon.jpg",
     "versions": [
       {
+        "version": "1.6.4.5",
+        "changelog": "Nach dem Abmelden bleibt kein altes Profil mehr hängen: keine Profil-Bubble mehr auf dem Login-Screen, und das nächste Konto übernimmt nicht mehr den Master des vorherigen.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/OleRaehcke/Bonfire-JellyProfiles/releases/download/fork-v1.6.4.5/Jellyfin.Profiles.zip",
+        "checksum": "3dc5823d7a85852ef40616eb64e78c3a",
+        "timestamp": "2026-10-12T10:45:40Z"
+      },
+      {
         "version": "1.6.4.4",
         "changelog": "Auf dem iPad wurden die eigenen Profile als \"Kindred's Bonfire\" angezeigt und \"Manage Profiles\" meldete \"Open Kindred first\". Behoben.",
         "targetAbi": "10.11.0.0",
