@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/OleRaehcke/Bonfire-JellyProfiles/main/images/icon.jpg",
     "versions": [
       {
+        "version": "1.6.4.3",
+        "changelog": "Der Profil-Button oben rechts erscheint jetzt auch, wenn \"Ask who's watching on startup\" ausgeschaltet ist.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/OleRaehcke/Bonfire-JellyProfiles/releases/download/fork-v1.6.4.3/Jellyfin.Profiles.zip",
+        "checksum": "c435e0753d620d9078d3dbbdbd5b9909",
+        "timestamp": "2026-10-12T09:42:54Z"
+      },
+      {
         "version": "1.6.4.2",
         "changelog": "Kein \"Your Bonfire\"-Titel mehr über den eigenen Profilen. Profilbild oben rechts im Header wird nicht mehr vergrößert/gezoomt angezeigt.",
         "targetAbi": "10.11.0.0",
