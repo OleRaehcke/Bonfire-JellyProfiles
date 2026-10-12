@@ -7563,6 +7563,26 @@
         evaluateFloatingBubbleVisibility: function (viewType) {
             let bubble = document.getElementById('profiles-floating-bubble');
 
+            // Fork: the login and server-select screens belong to nobody. The iOS app does
+            // not always fire 'usersignedout' or reload on sign-out, so the previous
+            // account's profile session and master survived into the login screen — its
+            // bubble sat there, and the next account inherited it as master. Forget both
+            // the first time this screen is seen, and never show the button on it.
+            const hash = window.location.hash || '';
+            const path = window.location.pathname || '';
+            if (hash.includes('login') || hash.includes('selectserver')
+                || path.includes('login') || path.includes('selectserver')) {
+                if (!this._loginScreenCleared) {
+                    this._loginScreenCleared = true;
+                    try { localStorage.removeItem(this.config.masterStorageKey); } catch (e) { /* blocked */ }
+                    this.clearProfileSession();
+                    this.invalidateProfileCache();
+                }
+                if (bubble) bubble.remove();
+                return;
+            }
+            this._loginScreenCleared = false;
+
             // With the switcher in Jellyfin's menu, keeping the floating button as well
             // would be two controls doing one job — and the second portrait beside the
             // native user icon is precisely what issue #14 reported as confusing.
