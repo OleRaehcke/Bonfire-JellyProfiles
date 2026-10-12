@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/OleRaehcke/Bonfire-JellyProfiles/main/images/icon.jpg",
     "versions": [
       {
+        "version": "1.6.4.4",
+        "changelog": "Auf dem iPad wurden die eigenen Profile als \"Kindred's Bonfire\" angezeigt und \"Manage Profiles\" meldete \"Open Kindred first\". Behoben.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/OleRaehcke/Bonfire-JellyProfiles/releases/download/fork-v1.6.4.4/Jellyfin.Profiles.zip",
+        "checksum": "92c21e61e57719df099dff6f12f0752c",
+        "timestamp": "2026-10-12T10:38:08Z"
+      },
+      {
         "version": "1.6.4.3",
         "changelog": "Der Profil-Button oben rechts erscheint jetzt auch, wenn \"Ask who's watching on startup\" ausgeschaltet ist.",
         "targetAbi": "10.11.0.0",
