@@ -7561,7 +7561,17 @@
                 return;
             }
 
-            if (!this.isProfileSessionActive()) {
+            // Fork: with "Ask who's watching on startup" off nobody goes through the gate, so
+            // no profile session is ever marked active and the button never appeared — leaving
+            // no way to switch at all. Show it whenever this account's preferences are known
+            // and the startup gate is off; handleBubbleClick copes with no active session, as
+            // it already must in menu mode.
+            // The prefs cache outlives sign-out (it matches the stored master), so also
+            // require a live session — otherwise the button would sit on the login page.
+            let signedIn = false;
+            try { signedIn = !!(typeof ApiClient !== 'undefined' && ApiClient && ApiClient.accessToken()); } catch (e) { /* no client yet */ }
+            const gateOff = signedIn && this.getSwitcherPrefs() !== null && !this.shouldAskOnStartup();
+            if (!this.isProfileSessionActive() && !gateOff) {
                 // No active session — remove entirely (will be re-created when needed)
                 if (bubble) bubble.remove();
                 return;
