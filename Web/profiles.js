@@ -7702,8 +7702,17 @@
         // consumed by fetchAndRenderProfiles for instant, flash-free overlay display.
         _prefetchProfiles: function () {
             if (this._profilePrefetchPending || (this.cachedProfiles && this.cachedProfiles.length)) return;
+            // Fork: the button now shows without a profile session, so this is reached on
+            // every tick before the master state exists. Back off for three seconds after
+            // finding none, like the header searches, instead of a storage read and a
+            // JSON.parse twice a second.
+            if (this._prefetchNoMasterAt && Date.now() - this._prefetchNoMasterAt < 3000) return;
             const masterState = this.readMasterState();
-            if (!masterState || !masterState.token) return;
+            if (!masterState || !masterState.token) {
+                this._prefetchNoMasterAt = Date.now();
+                return;
+            }
+            this._prefetchNoMasterAt = 0;
 
             this._profilePrefetchPending = true;
             const url = ApiClient.getUrl('plugins/profiles/list');
