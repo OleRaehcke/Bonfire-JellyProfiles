@@ -7,6 +7,15 @@
     "overview": "Multi-user profile switching for Jellyfin (OleRaehcke fork).",
     "owner": "OleRaehcke",
     "imageUrl": "https://raw.githubusercontent.com/OleRaehcke/Bonfire-JellyProfiles/main/images/icon.jpg",
-    "versions": []
+    "versions": [
+      {
+        "version": "1.6.4.1",
+        "changelog": "Erster eigener Build des Forks. Inhaltlich identisch mit Upstream 1.6.4.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/OleRaehcke/Bonfire-JellyProfiles/releases/download/fork-v1.6.4.1/Jellyfin.Profiles.zip",
+        "checksum": "cb6765948daa2c52e907ebd8e1494d00",
+        "timestamp": "2026-10-12T06:57:45Z"
+      }
+    ]
   }
 ]
