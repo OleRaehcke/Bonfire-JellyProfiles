@@ -888,6 +888,20 @@
             return { masterUserId: stored.masterUserId, token: token };
         },
 
+        /// Fork: makes the stored master agree with the list the server just sent. The
+        /// stored id can go missing between the list fetch and a later render — on the
+        /// iPad app it did, and the household's own profiles were then drawn as a linked
+        /// "Kindred's Bonfire" and Manage Profiles asked the master to open the master.
+        /// The list is the server's answer to "whose household is this", so it wins. Only
+        /// an id is stored; every action is still authorised by the server.
+        _syncMasterFromProfiles: function (masterProfile) {
+            if (!masterProfile || !masterProfile.profileUserId) return;
+            const st = this.readMasterState();
+            if (!st || this.normalizeGuid(st.masterUserId) !== this.normalizeGuid(masterProfile.profileUserId)) {
+                this.writeMasterState(masterProfile.profileUserId);
+            }
+        },
+
         /// Whether the session in use is the household's master account itself.
         isSignedInAsMaster: function (state) {
             const st = state || this.readMasterState();
@@ -3929,6 +3943,7 @@
             const manageBtnText = this.isManageMode ? t('common.done') : t('gate.manageProfiles');
 
             const masterProfile = profiles.find(p => p.isMaster && !p.isBonfire);
+            this._syncMasterFromProfiles(masterProfile);
             const maxSubProfiles = masterProfile ? masterProfile.maxSubProfiles : 5;
             const subProfileCount = profiles.filter(p => !p.isMaster && !p.isBonfire).length;
             const atLimit = subProfileCount >= maxSubProfiles;
@@ -4323,6 +4338,7 @@
                         this.renderOverlayContent(overlay, profiles);
                     } else {
                         const masterProfile = profiles.find(p => p.isMaster && !p.isBonfire);
+                        this._syncMasterFromProfiles(masterProfile);
 
                         // Managing profiles is the master account's to do, and the server
                         // refuses it from any other. It used to work from a profile only
