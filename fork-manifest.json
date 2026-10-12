@@ -1,0 +1,12 @@
+[
+  {
+    "category": "General",
+    "guid": "b1462fca-774b-4b13-8d02-e2d4f2bc18b9",
+    "name": "Bonfire",
+    "description": "Multi-user profile switching for Jellyfin. Fork of AHouseOfBards/Bonfire-JellyProfiles, built and published from github.com/OleRaehcke/Bonfire-JellyProfiles.",
+    "overview": "Multi-user profile switching for Jellyfin (OleRaehcke fork).",
+    "owner": "OleRaehcke",
+    "imageUrl": "https://raw.githubusercontent.com/OleRaehcke/Bonfire-JellyProfiles/main/images/icon.jpg",
+    "versions": []
+  }
+]

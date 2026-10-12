@@ -1,0 +1,163 @@
+name: Fork Release
+
+# Release pipeline for the OleRaehcke fork. Lives beside upstream's release.yml (which
+# triggers on `v*` tags and is disabled in this fork) and only reacts to `fork-v*` tags, so
+# merging upstream never conflicts with it and upstream tags never trigger it.
+#
+#   git tag -a fork-v1.6.4.1 -m "What changed"   # message becomes the changelog
+#   git push origin fork-v1.6.4.1
+#
+# The workflow builds, runs upstream's test suite, publishes the zip as a GitHub Release
+# and adds the version to fork-manifest.json on main — the file Jellyfin reads.
+
+on:
+  push:
+    tags:
+      - 'fork-v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fork-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.repository == 'OleRaehcke/Bonfire-JellyProfiles'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Work out the version and check it
+        id: version
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          V="${TAG#fork-v}"
+
+          # Jellyfin wants exactly four numeric parts; anything else fails to install.
+          if ! [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag ${TAG} must look like fork-v1.6.4.1 (four numeric parts)."
+            exit 1
+          fi
+
+          # Only release what is on main, so nothing unreviewed sneaks out from a side branch.
+          git fetch origin +refs/heads/main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::${TAG} points at a commit that is not on main."
+            exit 1
+          fi
+
+          # Must be newer than every version already published, or Jellyfin never offers it.
+          LAST=$(git show origin/main:fork-manifest.json | jq -r '[.[0].versions[].version] | first // "0.0.0.0"')
+          HIGHEST=$(printf '%s\n%s\n' "$LAST" "$V" | sort -V | tail -1)
+          if [ "$V" = "$LAST" ] || [ "$HIGHEST" != "$V" ]; then
+            echo "::error::${V} is not newer than the last fork release ${LAST}."
+            exit 1
+          fi
+
+          # Annotated tag message → changelog. Lightweight tags fall back to a generic line.
+          git fetch --force origin "refs/tags/${TAG}:refs/tags/${TAG}"
+          NOTES=$(git tag -l --format='%(contents)' "$TAG" | sed '/^-----BEGIN PGP/,$d')
+          if [ -z "${NOTES//[[:space:]]/}" ]; then
+            NOTES="Fork build ${V}."
+          fi
+          printf '%s\n' "$NOTES" > notes.md
+
+          # targetAbi follows upstream's newest entry, so it moves when upstream moves.
+          ABI=$(jq -r '.[0].versions[0].targetAbi' manifest.json)
+
+          echo "version=${V}" >> "$GITHUB_OUTPUT"
+          echo "abi=${ABI}" >> "$GITHUB_OUTPUT"
+          echo "Releasing ${V} (previous ${LAST}, targetAbi ${ABI})"
+
+      - name: Setup .NET 9 and 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run upstream's test suite
+        run: |
+          node --check Web/profiles.js
+          bash tests/run.sh
+          node Web/i18n/validate.js
+
+      # Version and InformationalVersion are both set to the four-part fork version: the
+      # plugin compares the informational version against its install folder name
+      # (Bonfire_<version>), which Jellyfin derives from the manifest entry.
+      - name: Build release DLL with the fork version
+        run: |
+          set -euo pipefail
+          V="${{ steps.version.outputs.version }}"
+          rm -rf bin obj
+          dotnet build -c Release --nologo -p:Version="$V" -p:InformationalVersion="$V"
+          mkdir -p dist
+          zip -j dist/Jellyfin.Profiles.zip bin/Release/net9.0/Jellyfin.Profiles.dll
+          echo "md5=$(md5sum dist/Jellyfin.Profiles.zip | awk '{print $1}')" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/Jellyfin.Profiles.zip \
+            --title "$GITHUB_REF_NAME" --notes-file notes.md --verify-tag
+
+      - name: Add the version to fork-manifest.json on main
+        run: |
+          set -euo pipefail
+          V="${{ steps.version.outputs.version }}"
+          ABI="${{ steps.version.outputs.abi }}"
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/Jellyfin.Profiles.zip"
+          TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          for i in 1 2 3; do
+            git fetch origin +refs/heads/main:refs/remotes/origin/main
+            git checkout -B ci-manifest origin/main
+            jq --arg v "$V" --arg c "$md5" --arg u "$URL" --arg a "$ABI" --arg t "$TS" \
+               --rawfile n notes.md \
+               '.[0].versions = [{version:$v, changelog:($n|rtrimstr("\n")), targetAbi:$a,
+                                  sourceUrl:$u, checksum:$c, timestamp:$t}]
+                                + [.[0].versions[] | select(.version != $v)]' \
+               fork-manifest.json > fork-manifest.tmp.json
+            mv fork-manifest.tmp.json fork-manifest.json
+            git add fork-manifest.json
+            git commit -m "ci: publish ${GITHUB_REF_NAME} in fork-manifest.json [skip ci]"
+            if git push origin HEAD:main; then exit 0; fi
+            echo "Push rejected (attempt $i), retrying."
+          done
+          echo "::error::Could not push fork-manifest.json to main."
+          exit 1
+
+      # What Jellyfin will actually download must match what the manifest promises.
+      - name: Verify published asset against the manifest
+        run: |
+          set -euo pipefail
+          V="${{ steps.version.outputs.version }}"
+          for i in $(seq 1 12); do
+            curl -fsSL -H "Cache-Control: no-cache" \
+              "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/fork-manifest.json?cb=$(date +%s)" \
+              -o published.json || true
+            EXPECTED=$(jq -r --arg v "$V" '.[0].versions[] | select(.version == $v) | .checksum' published.json 2>/dev/null || true)
+            [ -n "$EXPECTED" ] && break
+            sleep 5
+          done
+          SOURCE=$(jq -r --arg v "$V" '.[0].versions[] | select(.version == $v) | .sourceUrl' published.json)
+          curl -fsSL "$SOURCE" -o check.zip
+          ACTUAL=$(md5sum check.zip | awk '{print $1}')
+          echo "manifest=${EXPECTED} asset=${ACTUAL}"
+          [ "$EXPECTED" = "$ACTUAL" ] || { echo "::error::Checksum mismatch."; exit 1; }
